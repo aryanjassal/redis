@@ -25,19 +25,29 @@ Only the following commands are supported.
 
 Store a value under a key.
 
-Input: `SET name bob` Expected Result: `OK`
+Input: `SET name bob`
+
+Expected Result: `OK`
 
 #### GET
 
 Retrieve a value by key.
 
-Input: `GET name` Expected Result: `bob` If key does not exist: `(nil)`
+Input: `GET name`
+
+Expected Result: `bob`
+
+If key does not exist: `(nil)`
 
 #### DEL
 
 Delete a key.
 
-Input: `DEL name` Expected Result: `1` If key does not exist: `0`
+Input: `DEL name`
+
+Expected Result: `1`
+
+If key does not exist: `0`
 
 #### Technical Requirements
 
@@ -60,13 +70,21 @@ needed.
 
 Writes current database state to a file.
 
-Input: `SAVE` Expected Result: `OK` On error: `ERR: {error message}`
+Input: `SAVE`
+
+Expected Result: `OK`
+
+On error: `ERR: {error message}`
 
 #### LOAD
 
 Loads database state from a file.
 
-Input: `LOAD` Expected Result: `OK` On error: `ERR: {error message}`
+Input: `LOAD`
+
+Expected Result: `OK`
+
+On error: `ERR: {error message}`
 
 ### Expiration
 
@@ -83,15 +101,23 @@ Set expiry on creation: `SET name bob EX 60`
 
 Returns remaining lifetime.
 
-Input: `TTL name` Expected Result: `60` (the actual TTL) Invalid key or expired
-key: `(nil)` No expiry: `0`
+Input: `TTL name`
+
+Expected Result: `60` (the actual TTL)
+
+Invalid key or expired key: `(nil)`
+
+No expiry: `0`
 
 #### Expire
 
 Assigns expiration to an existing key.
 
-Input: `EXPIRE name 60` Expected Result: `OK` Invalid key or expired key:
-`(nil)`
+Input: `EXPIRE name 60`
+
+Expected Result: `OK`
+
+Invalid key or expired key: `(nil)`
 
 ### TCP Server
 
@@ -105,16 +131,22 @@ simultaneously to share the same database by using synchronisation primitives.
 Implement a simplified version of Redis’ RESP protocol. This should aim to
 maintain compatibility with simple Redis clients where possible.
 
-> [!NOTE] I haven't researched RESP yet, so this section needs to be updated
+<!-- prettier-ignore-start -->
+> [!NOTE] 
+> I haven't researched RESP yet, so this section needs to be updated
 > according to the protocol specifications.
+<!-- prettier-ignore-end -->
 
 ### Capability Extension
 
 Support more than string values, like storing lists, hashes, or sets as values.
 The database should support storing multiple value types under different keys.
 
-> [!NOTE] I haven't researched this yet, so this section needs to be updated
-> according to the protocol specifications.
+<!-- prettier-ignore-start -->
+> [!NOTE]
+> I haven't researched this yet, so this section needs to be updated according 
+> to the protocol specifications.
+<!-- prettier-ignore-end -->
 
 - **List operations**: `LPUSH`, `RPUSH`, `LPOP`
 - **Hashes**: `HSET`, `HGET`
