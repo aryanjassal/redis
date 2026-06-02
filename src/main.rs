@@ -1,25 +1,18 @@
 mod cli;
+mod redis;
 
-use std::{
-    collections::HashMap,
-    io::{self, Write},
-    sync::{LazyLock, Mutex},
-};
-
-// Store the database in a hashmap in memory
-static DATABASE: LazyLock<Mutex<HashMap<String, String>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
+use redis::database;
+use std::io::{self, Write};
 
 fn parse_set(command: &Vec<&str>) -> Result<(), String> {
     if command.len() != 2 {
-        return Err(String::from("Invalid command"));
+        return Err(String::from("Incorrect usage"));
     }
-    return match DATABASE.lock() {
-        Ok(mut database) => {
-            database.insert(
-                String::from(*command.get(0).unwrap()),
-                String::from(*command.get(1).unwrap()),
-            );
+    return match database::set(
+        String::from(*command.get(0).unwrap()),
+        String::from(*command.get(1).unwrap()),
+    ) {
+        Ok(_) => {
             io::stdout().write_all("OK\n\n".as_bytes()).unwrap();
             Ok(())
         }
@@ -29,11 +22,11 @@ fn parse_set(command: &Vec<&str>) -> Result<(), String> {
 
 fn parse_get(command: &Vec<&str>) -> Result<(), String> {
     if command.len() != 1 {
-        return Err(String::from("Invalid command"));
+        return Err(String::from("Incorrect usage"));
     }
-    return match DATABASE.lock() {
-        Ok(database) => {
-            match database.get(*command.get(0).unwrap()) {
+    return match database::get(String::from(*command.get(0).unwrap())) {
+        Ok(value) => {
+            match value {
                 Some(result) => {
                     io::stdout().write_all(result.as_bytes()).unwrap();
                     io::stdout().write_all("\n\n".as_bytes()).unwrap();
@@ -50,11 +43,11 @@ fn parse_get(command: &Vec<&str>) -> Result<(), String> {
 
 fn parse_del(command: &Vec<&str>) -> Result<(), String> {
     if command.len() != 1 {
-        return Err(String::from("Invalid command"));
+        return Err(String::from("Incorrect usage"));
     }
-    return match DATABASE.lock() {
-        Ok(mut database) => {
-            match database.remove(*command.get(0).unwrap()) {
+    return match database::delete(String::from(*command.get(0).unwrap())) {
+        Ok(value) => {
+            match value {
                 Some(_) => {
                     io::stdout().write_all("1\n\n".as_bytes()).unwrap();
                 }
@@ -73,19 +66,19 @@ fn main() {
     let mut buffer = String::new();
 
     // Register commands
-    cli::parser::register(cli::parser::Parser {
+    cli::register(cli::parser::Parser {
         name: String::from("set"),
         parser: parse_set,
     })
     .unwrap();
 
-    cli::parser::register(cli::parser::Parser {
+    cli::register(cli::parser::Parser {
         name: String::from("get"),
         parser: parse_get,
     })
     .unwrap();
 
-    cli::parser::register(cli::parser::Parser {
+    cli::register(cli::parser::Parser {
         name: String::from("del"),
         parser: parse_del,
     })
@@ -99,7 +92,7 @@ fn main() {
         io::stdin().read_line(&mut buffer).unwrap();
         let _ = buffer.pop().unwrap_or(' '); // Make sure to trim newline
 
-        cli::parser::parse(buffer.split(' ').collect());
+        cli::parse(cli::split(&buffer));
 
         // Write input and clear buffer
         buffer.clear();
