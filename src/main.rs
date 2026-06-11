@@ -61,6 +61,19 @@ fn parse_del(command: &Vec<&str>) -> Result<(), String> {
     };
 }
 
+fn parse_save(command: &Vec<&str>) -> Result<(), String> {
+    if command.len() > 0 {
+        return Err(String::from("Incorrect usage"));
+    }
+    return match database::save("dump.rdb".to_string()) {
+        Ok(_) => {
+            io::stdout().write_all("1\n\n".as_bytes()).unwrap();
+            Ok(())
+        }
+        Err(e) => Err(e.to_string()),
+    };
+}
+
 fn main() {
     // Store the input commands
     let mut buffer = String::new();
@@ -83,6 +96,15 @@ fn main() {
         parser: parse_del,
     })
     .unwrap();
+
+    cli::register(cli::parser::Parser {
+        name: String::from("save"),
+        parser: parse_save,
+    })
+    .unwrap();
+
+    // Attempt loading if possible
+    database::load("dump.rdb".to_string()).unwrap();
 
     // REPL
     loop {
