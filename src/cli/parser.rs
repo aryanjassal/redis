@@ -5,7 +5,8 @@ use std::{
 
 pub struct Parser {
     pub name: String,
-    pub parser: fn(&Vec<&str>) -> Result<(), String>,
+    pub arity: i32,
+    pub parser: fn(&[&str]) -> Result<(), String>,
 }
 
 static REGISTRY: LazyLock<Mutex<Vec<Parser>>> = LazyLock::new(|| Mutex::new(Vec::new()));
@@ -55,14 +56,17 @@ pub fn register(parser: Parser) -> Result<(), String> {
             registry.push(parser);
             Ok(())
         }
-        Err(_) => Err(String::from("Failed to acquire registry")),
+        Err(_) => Err(String::from("Failed to acquire registry\n")),
     };
 }
 
 pub fn parse(command: Vec<&str>) {
     // Remove the element we just parsed before sending it to the parser
-    let mut child_command: Vec<&str> = command.clone();
-    let keyword = child_command.remove(0).to_lowercase();
+    if command.len() < 1 {
+        return;
+    };
+    let keyword = command[0].to_lowercase();
+    let args = &command[1..];
     let mut found: bool = false;
 
     match REGISTRY.lock() {
@@ -70,14 +74,25 @@ pub fn parse(command: Vec<&str>) {
             for parser in registry.iter() {
                 if parser.name == keyword {
                     found = true;
-                    match (parser.parser)(&child_command) {
+                    if (parser.arity > 0
+                        && TryInto::<i32>::try_into(args.len()).unwrap() != parser.arity)
+                        || (parser.arity < 0
+                            && TryInto::<i32>::try_into(args.len()).unwrap() < parser.arity)
+                    {
+                        io::stdout()
+                            .write_all("ERROR: invalid number of arguments\n".as_bytes())
+                            .unwrap();
+                        io::stdout().flush().unwrap();
+                        break;
+                    }
+                    match (parser.parser)(&args) {
                         Ok(_) => break,
                         Err(e) => {
                             io::stdout()
                                 .write_all("ERROR: Command failed: ".as_bytes())
                                 .unwrap();
                             io::stdout().write_all(e.to_string().as_bytes()).unwrap();
-                            io::stdout().write_all("\n\n".as_bytes()).unwrap();
+                            io::stdout().write_all("\n".as_bytes()).unwrap();
                             io::stdout().flush().unwrap();
                         }
                     };
@@ -87,7 +102,7 @@ pub fn parse(command: Vec<&str>) {
         }
         Err(_) => {
             io::stdout()
-                .write_all("ERROR: Failed to acquire registry\n\n".as_bytes())
+                .write_all("ERROR: Failed to acquire registry\n".as_bytes())
                 .unwrap();
             io::stdout().flush().unwrap();
         }
@@ -100,7 +115,7 @@ pub fn parse(command: Vec<&str>) {
         io::stdout()
             .write_all(&command.join(" ").into_bytes())
             .unwrap();
-        io::stdout().write_all("\n\n".as_bytes()).unwrap();
+        io::stdout().write_all("\n".as_bytes()).unwrap();
         io::stdout().flush().unwrap();
     }
 }
